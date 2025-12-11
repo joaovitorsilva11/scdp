@@ -6,8 +6,18 @@ import lombok.Data;
 @Data
 @Builder
 public class RequisicaoResumoDTO {
-    private String chave;
-    private String tipo;
-    private String status;
+
+    private Long id;
+    private DadosDTO dados;
+
+
+    @Data
+    @Builder
+    public static class DadosDTO {
+        private String tipo;
+        private String status;
+        private String chave;
+    }
 }
+
 

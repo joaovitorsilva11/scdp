@@ -56,9 +56,12 @@ public class RequisicaoService {
                         }
 
                         return RequisicaoResumoDTO.builder()
-                                .chave(diaria.get().getChave())
-                                .tipo("DIARIA")
-                                .status(diaria.get().getSituacao().getDescricao()) // status REAL da diária
+                                .id(req.getId())
+                                .dados(RequisicaoResumoDTO.DadosDTO.builder()
+                                        .tipo("DIARIA")
+                                        .status(diaria.get().getSituacao().getDescricao())
+                                        .chave(diaria.get().getChave())
+                                        .build())
                                 .build();
 
                     } else if (passagem.isPresent()) {
@@ -71,9 +74,12 @@ public class RequisicaoService {
                         }
 
                         return RequisicaoResumoDTO.builder()
-                                .chave(passagem.get().getChave())
-                                .tipo("PASSAGEM")
-                                .status(passagem.get().getSituacao().getDescricao()) // status REAL da passagem
+                                .id(req.getId())
+                                .dados(RequisicaoResumoDTO.DadosDTO.builder()
+                                        .tipo("PASSAGEM")
+                                        .status(passagem.get().getSituacao().getDescricao())
+                                        .chave(passagem.get().getChave())
+                                        .build())
                                 .build();
                     }
 
