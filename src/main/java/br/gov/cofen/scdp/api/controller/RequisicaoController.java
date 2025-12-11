@@ -1,7 +1,7 @@
 package br.gov.cofen.scdp.api.controller;
 
 import br.gov.cofen.scdp.api.dto.RequisicaoDetalheDTO;
-import br.gov.cofen.scdp.api.dto.RequisicaoResumoDTO;
+import br.gov.cofen.scdp.api.dto.RequisicoesCpfDTO;
 import br.gov.cofen.scdp.domain.service.RequisicaoService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -17,9 +17,10 @@ public class RequisicaoController {
     private final RequisicaoService service;
 
     @GetMapping("/cpf/{cpf}")
-    public ResponseEntity<List<RequisicaoResumoDTO>> listar(@PathVariable String cpf) {
+    public ResponseEntity<RequisicoesCpfDTO> listarComWrapper(@PathVariable String cpf) {
         validarCpf(cpf);
-        return ResponseEntity.ok(service.listarRequisicoesPorCpf(cpf));
+        RequisicoesCpfDTO dto = service.listarRequisicoesPorCpfComWrapper(cpf);
+        return ResponseEntity.ok(dto);
     }
 
     @GetMapping("/id/{id}")

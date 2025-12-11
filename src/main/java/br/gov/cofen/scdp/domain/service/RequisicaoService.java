@@ -4,6 +4,7 @@ import br.gov.cofen.scdp.api.dto.RequisicaoDetalheDTO;
 import br.gov.cofen.scdp.api.dto.RequisicaoDiariaDTO;
 import br.gov.cofen.scdp.api.dto.RequisicaoPassagemDTO;
 import br.gov.cofen.scdp.api.dto.RequisicaoResumoDTO;
+import br.gov.cofen.scdp.api.dto.RequisicoesCpfDTO;
 import br.gov.cofen.scdp.domain.entity.RequisicaoDiariaEntity;
 import br.gov.cofen.scdp.domain.entity.RequisicaoEntity;
 import br.gov.cofen.scdp.domain.entity.RequisicaoPassagemEntity;
@@ -28,16 +29,16 @@ public class RequisicaoService {
     private final RequisicaoDiariaRepository diariaRepository;
     private final RequisicaoPassagemRepository passagemRepository;
 
-    public List<RequisicaoResumoDTO> listarRequisicoesPorCpf(String cpf) {
+    // ----------------------------
+    // Endpoint de CPF (novo formato)
+    // ----------------------------
+    public RequisicoesCpfDTO listarRequisicoesPorCpfComWrapper(String cpf) {
 
         UsuarioEntity usuario = usuarioRepository.findByCpf(cpf)
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
 
-        List<RequisicaoEntity> requisicoes =
-                requisicaoRepository.findByUsuarioId(usuario.getId());
-
-        return requisicoes.stream()
-                .filter(req -> req.getStatus() != 3)
+        List<RequisicaoResumoDTO> requisicoes = requisicaoRepository.findByUsuarioId(usuario.getId()).stream()
+                .filter(req -> req.getStatus() != 3) // tb_requisicao.situacao_id <> 3
                 .map(req -> {
 
                     Optional<RequisicaoDiariaEntity> diaria =
@@ -46,14 +47,10 @@ public class RequisicaoService {
                     Optional<RequisicaoPassagemEntity> passagem =
                             passagemRepository.findByRequisicaoId(req.getId());
 
+                    // --- DIÁRIA ---
                     if (diaria.isPresent()) {
-
-                        long situacaoDiaria = diaria.get().getSituacao().getId();
-
-                        // excluir se situacao 7, 8 ou 15
-                        if (situacaoDiaria == 7 || situacaoDiaria == 8 || situacaoDiaria == 15) {
-                            return null; // exclui
-                        }
+                        long situacao = diaria.get().getSituacao().getId();
+                        if (situacao == 7 || situacao == 8 || situacao == 15) return null;
 
                         return RequisicaoResumoDTO.builder()
                                 .id(req.getId())
@@ -63,15 +60,12 @@ public class RequisicaoService {
                                         .chave(diaria.get().getChave())
                                         .build())
                                 .build();
+                    }
 
-                    } else if (passagem.isPresent()) {
-
-                        long situacaoPassagem = passagem.get().getSituacao().getId();
-
-                        // excluir se situacao 6 ou 7
-                        if (situacaoPassagem == 6 || situacaoPassagem == 7) {
-                            return null; // exclui
-                        }
+                    // --- PASSAGEM ---
+                    if (passagem.isPresent()) {
+                        long situacao = passagem.get().getSituacao().getId();
+                        if (situacao == 6 || situacao == 7) return null;
 
                         return RequisicaoResumoDTO.builder()
                                 .id(req.getId())
@@ -83,14 +77,20 @@ public class RequisicaoService {
                                 .build();
                     }
 
-                    // Nenhuma diária ou passagem encontrada: descarta
                     return null;
-
                 })
-                .filter(Objects::nonNull) // remove excluídas
+                .filter(Objects::nonNull)
                 .toList();
+
+        return RequisicoesCpfDTO.builder()
+                .cpf(cpf)
+                .requisicoes(requisicoes)
+                .build();
     }
 
+    // ----------------------------
+    // Endpoint de detalhes por ID
+    // ----------------------------
     public RequisicaoDetalheDTO detalhes(Long id) {
 
         RequisicaoEntity req = requisicaoRepository.findById(id)
@@ -125,6 +125,9 @@ public class RequisicaoService {
                 .build();
     }
 
+    // ----------------------------
+    // Mappers
+    // ----------------------------
     private RequisicaoDiariaDTO mapDiaria(RequisicaoDiariaEntity e) {
         return RequisicaoDiariaDTO.builder()
                 .requisicao(e.getRequisicao().getId().toString())
@@ -145,6 +148,4 @@ public class RequisicaoService {
                 .motivo(e.getMotivo())
                 .build();
     }
-
-
 }
